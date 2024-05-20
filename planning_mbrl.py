@@ -21,7 +21,7 @@ from train_model import train_model
 from utils import ReplayBuffer
 
 def plan_model_random_shooting(env, state, ac_size, horizon, model, reward_fn, n_samples_mpc=100, device='cpu'):
-    # TODO START-random MPC with shooting
+    # START-random MPC with shooting
     # Hint1: randomly sample actions in the action space
     # Hint2: rollout model based on current state and random action, select the best action that maximize the sum of the reward
 
@@ -46,7 +46,7 @@ def plan_model_random_shooting(env, state, ac_size, horizon, model, reward_fn, n
     # use the first action from the best trajectory
     best_ac = random_actions[best_ac_idx, 0]
 
-    # TODO END
+    # END
     return best_ac, random_actions[best_ac_idx]
 
 
@@ -59,11 +59,15 @@ def plan_model_mppi(env, state, ac_size, horizon, model, reward_fn, n_samples_mp
     # Rolling forward through the mdoel for horizon steps
     if not isinstance(model, list):
         all_states, all_rewards = rollout_model(model, state_repeats, random_actions, horizon, reward_fn)
-    # TODO START-add ensemble MPPI
-    # Hint 1: rollout each model and concatenate rewards for each model
-
-
-    # TODO END
+    else:
+        # START-add ensemble MPPI
+        # Hint 1: rollout each model and concatenate rewards for each model
+        all_rewards_sum = torch.zeros((n_samples_mpc, horizon))
+        for i, _ in enumerate(model):
+            all_states, all_rewards = rollout_model(model[i], state_repeats, random_actions, horizon, reward_fn)
+            all_rewards_sum = all_rewards_sum + all_rewards
+        all_rewards_sum = all_rewards_sum / len(model)
+        # END
 
 
 
@@ -74,7 +78,7 @@ def plan_model_mppi(env, state, ac_size, horizon, model, reward_fn, n_samples_mp
 
     # Run through a few iterations of MPPI
 
-    # TODO START-MPPI
+    # START-MPPI
     # Hint1: Compute weights based on exponential of returns
     # Hint2: sample actions based on the weight, and compute average return over models
     # Hint3: if model type is a list, then implement ensemble mppi
@@ -96,9 +100,17 @@ def plan_model_mppi(env, state, ac_size, horizon, model, reward_fn, n_samples_mp
         # Perform rollout with new actions using the model
         if not isinstance(model, list):
             all_states, all_rewards = rollout_model(model, state_repeats, random_actions, horizon, reward_fn)
-        all_returns = all_rewards.sum(axis=-1)
+        else:
+            # START-add ensemble MPPI
+            # Hint 1: rollout each model and concatenate rewards for each model
+            all_rewards_sum = torch.zeros((n_samples_mpc, horizon))
+            for i, _ in enumerate(model):
+                all_states, all_rewards = rollout_model(model[i], state_repeats, random_actions, horizon, reward_fn)
+                all_rewards_sum = all_rewards_sum + all_rewards
+            all_rewards_sum = all_rewards_sum / len(model)
+            # END
 
-    # TODO END
+    # END
 
     # Finally take first action from best trajectory
     best_ac_idx = np.argmax(all_rewards.sum(axis=-1))
@@ -117,7 +129,7 @@ def rollout_model(
     all_rewards = []
     curr_state = initial_states # Starting from the initial state
     actions = actions
-    # TODO START
+    # START
 
     # Hint1: concatenate current state and action pairs as the input for the model and predict the next observation
     # Hint2: get the predicted reward using reward_fn()
@@ -131,7 +143,7 @@ def rollout_model(
         all_rewards.append(next_reward)
         curr_state = next_states
 
-    # TODO END
+    # END
     all_states_full = torch.cat([state[:, None, :] for state in all_states], dim=1).cpu().detach().numpy()
     all_rewards_full = torch.cat(all_rewards, dim=-1).cpu().detach().numpy()    
     return all_states_full, all_rewards_full
@@ -237,9 +249,15 @@ def simulate_mbrl(env, model, plan_mode, num_epochs=200, max_path_length=200, mp
 
     else:
         print('Initialize separate optimizers for ensemble mbrl')
-        # TODO START
+        # START
         # Hint: try using separate optimizer with different learning rate for each model.
-        # TODO END
+        lrs = np.linspace(1e-4, 1e-3, len(model))
+        opts = list()
+        for i, lr in enumerate(lrs):
+            opt = optim.Adam(model[i].parameters(), lr=lr)
+            opts.append(opt)
+        optimizer = opts
+        # END
     replay_buffer = ReplayBuffer(obs_size = env.observation_space.shape[0],
                                  action_size = env.action_space.shape[0], 
                                  capacity=capacity, 
