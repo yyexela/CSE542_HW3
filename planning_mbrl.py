@@ -29,21 +29,12 @@ def plan_model_random_shooting(env, state, ac_size, horizon, model, reward_fn, n
     #random_actions = sample_uniform_random_actions(n_samples_mpc, horizon, ac_size, env.action_space)
 
     # Store n_samples_mpc random trajectories
-    state_repeats = list()
-    random_actions = list()
-    for _ in range(n_samples_mpc):
-        actions_seq = list()
-        for _ in range(horizon):
-            actions_seq.append(env.action_space.sample())
-        actions_seq = np.vstack(actions_seq)
-        random_actions.append(actions_seq)
-        state_repeats.append(state)
-    state_repeats = np.stack(state_repeats)
-    random_actions = np.stack(random_actions)
-
-    # Roll out based on the sampled random actions
-    #all_states, all_rewards = rollout_model(model, state_repeats, random_actions, horizon, reward_fn)
-    all_states, all_rewards = rollout_model(model, state_repeats, random_actions, horizon, reward_fn, device=device)
+    # Rolling forward random actions through the model
+    state_repeats = torch.from_numpy(np.repeat(state[None], n_samples_mpc, axis=0)).cuda().float()
+    # Sampling random actions in the range of the action space
+    random_actions = torch.FloatTensor(n_samples_mpc, horizon, ac_size).uniform_(env.action_space.low[0], env.action_space.high[0]).cuda().float()
+    # Rolling forward through the mdoel for horizon steps
+    all_states, all_rewards = rollout_model(model, state_repeats, random_actions, horizon, reward_fn)
 
     # Compute the total rewards for each trajectory
     total_rewards = np.sum(all_rewards, axis=-1)
@@ -61,7 +52,7 @@ def plan_model_random_shooting(env, state, ac_size, horizon, model, reward_fn, n
 def plan_model_mppi(env, state, ac_size, horizon, model, reward_fn, n_samples_mpc=100, n_iter_mppi=10, gaussian_noise_scales=[1.0, 1.0, 0.5, 0.5, 0.2, 0.2, 0.1, 0.1, 0.01, 0.01], device='cpu'):
     assert len(gaussian_noise_scales) == n_iter_mppi
     # Rolling forward random actions through the model
-    state_repeats = torch.from_numpy(np.repeat(state[None], n_samples_mpc, axis=0)).cuda()
+    state_repeats = torch.from_numpy(np.repeat(state[None], n_samples_mpc, axis=0)).cuda().float()
     # Sampling random actions in the range of the action space
     random_actions = torch.FloatTensor(n_samples_mpc, horizon, ac_size).uniform_(env.action_space.low[0], env.action_space.high[0]).cuda().float()
     # Rolling forward through the mdoel for horizon steps
@@ -108,8 +99,8 @@ def rollout_model(
     # Collect the following data
     all_states = []
     all_rewards = []
-    curr_state = torch.Tensor(initial_states).to(device) # Starting from the initial state
-    actions = torch.Tensor(actions).to(device)
+    curr_state = initial_states # Starting from the initial state
+    actions = actions
     # TODO START
 
     # Hint1: concatenate current state and action pairs as the input for the model and predict the next observation
