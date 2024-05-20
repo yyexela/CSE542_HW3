@@ -19,16 +19,46 @@ import matplotlib.pyplot as plt
 from train_model import train_model
 from utils import ReplayBuffer
 
-def plan_model_random_shooting(env, state, ac_size, horizon, model, reward_fn, n_samples_mpc=100):
+def plan_model_random_shooting(env, state, ac_size, horizon, model, reward_fn, n_samples_mpc=100, device='cpu'):
     # TODO START-random MPC with shooting
     # Hint1: randomly sample actions in the action space
     # Hint2: rollout model based on current state and random action, select the best action that maximize the sum of the reward
+
+    #Initialize state and sample random_actions
+    #state_repeats = repeat(state, n_samples_mpc)
+    #random_actions = sample_uniform_random_actions(n_samples_mpc, horizon, ac_size, env.action_space)
+
+    # Store n_samples_mpc random trajectories
+    state_repeats = list()
+    random_actions = list()
+    for _ in range(n_samples_mpc):
+        actions_seq = list()
+        for _ in range(horizon):
+            actions_seq.append(env.action_space.sample())
+        actions_seq = np.vstack(actions_seq)
+        random_actions.append(actions_seq)
+        state_repeats.append(state)
+    state_repeats = np.stack(state_repeats)
+    random_actions = np.stack(random_actions)
+
+    # Roll out based on the sampled random actions
+    #all_states, all_rewards = rollout_model(model, state_repeats, random_actions, horizon, reward_fn)
+    all_states, all_rewards = rollout_model(model, state_repeats, random_actions, horizon, reward_fn, device=device)
+
+    # Compute the total rewards for each trajectory
+    total_rewards = np.sum(all_rewards, axis=-1)
+
+    # Select the trajectory with the highest total reward
+    best_ac_idx = np.argmax(total_rewards)
+
+    # use the first action from the best trajectory
+    best_ac = random_actions[best_ac_idx, 0]
 
     # TODO END
     return best_ac, random_actions[best_ac_idx]
 
 
-def plan_model_mppi(env, state, ac_size, horizon, model, reward_fn, n_samples_mpc=100, n_iter_mppi=10, gaussian_noise_scales=[1.0, 1.0, 0.5, 0.5, 0.2, 0.2, 0.1, 0.1, 0.01, 0.01]):
+def plan_model_mppi(env, state, ac_size, horizon, model, reward_fn, n_samples_mpc=100, n_iter_mppi=10, gaussian_noise_scales=[1.0, 1.0, 0.5, 0.5, 0.2, 0.2, 0.1, 0.1, 0.01, 0.01], device='cpu'):
     assert len(gaussian_noise_scales) == n_iter_mppi
     # Rolling forward random actions through the model
     state_repeats = torch.from_numpy(np.repeat(state[None], n_samples_mpc, axis=0)).cuda()
@@ -73,32 +103,44 @@ def rollout_model(
         initial_states,
         actions,
         horizon,
-        reward_fn):
+        reward_fn,
+        device='cpu'):
     # Collect the following data
     all_states = []
     all_rewards = []
-    curr_state = initial_states # Starting from the initial state
+    curr_state = torch.Tensor(initial_states).to(device) # Starting from the initial state
+    actions = torch.Tensor(actions).to(device)
     # TODO START
 
     # Hint1: concatenate current state and action pairs as the input for the model and predict the next observation
     # Hint2: get the predicted reward using reward_fn()
+
+    for j in range(horizon):
+        curr_actions = actions[:, j]
+        model_in = torch.cat((curr_state, curr_actions) ,1)
+        next_states = model(model_in)
+        next_reward = reward_fn(next_states, curr_actions)
+        all_states.append(next_states)
+        all_rewards.append(next_reward)
+        curr_state = next_states
 
     # TODO END
     all_states_full = torch.cat([state[:, None, :] for state in all_states], dim=1).cpu().detach().numpy()
     all_rewards_full = torch.cat(all_rewards, dim=-1).cpu().detach().numpy()    
     return all_states_full, all_rewards_full
 
-def planning_agent(env, o_for_agent, model, reward_fn, plan_mode, mpc_horizon=None, n_samples_mpc=None):
+def planning_agent(env, o_for_agent, model, reward_fn, plan_mode, mpc_horizon=None, n_samples_mpc=None, device='cpu'):
     if plan_mode == 'random':
         # Taking random actions
         action = torch.Tensor(env.action_space.sample()[None]).cuda()
     elif plan_mode == 'random_mpc':
         # Taking actions via random shooting + MPC
         action, _ = plan_model_random_shooting(env, o_for_agent, env.action_space.shape[0], mpc_horizon, model,
-                                               reward_fn, n_samples_mpc=n_samples_mpc)
+                                               reward_fn, n_samples_mpc=n_samples_mpc, device=device)
+        action = torch.Tensor(action).to(device)
     elif plan_mode == 'mppi':
         action, _ = plan_model_mppi(env, o_for_agent, env.action_space.shape[0], mpc_horizon, model, reward_fn,
-                                    n_samples_mpc=n_samples_mpc)
+                                    n_samples_mpc=n_samples_mpc, device=device)
     else:
         raise NotImplementedError("Other planning methods not implemented")
     return action
@@ -132,8 +174,8 @@ def collect_traj_MBRL(
         o_for_agent = o
 
         # Using the planning agent to take actions
-        action = planning_agent(env, o_for_agent, model, reward_fn, plan_mode, mpc_horizon=mpc_horizon, n_samples_mpc=n_samples_mpc)
-        action= action.cpu().detach().numpy()[0]
+        action = planning_agent(env, o_for_agent, model, reward_fn, plan_mode, mpc_horizon=mpc_horizon, n_samples_mpc=n_samples_mpc, device=device)
+        action = action.cpu().detach().numpy()[0]
 
         # Step the simulation forward
         next_o, r, done, env_info = env.step(copy.deepcopy(action))
