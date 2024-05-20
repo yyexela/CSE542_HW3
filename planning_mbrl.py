@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.distributions as tdist
 import numpy as np
 from torch import nn
 from torch import optim
@@ -78,8 +79,24 @@ def plan_model_mppi(env, state, ac_size, horizon, model, reward_fn, n_samples_mp
     # Hint2: sample actions based on the weight, and compute average return over models
     # Hint3: if model type is a list, then implement ensemble mppi
 
-
-
+    for _ in range(n_iter_mppi):
+        # Weight trajectories by exponential of returns
+        exp = np.exp(all_returns)
+        weights = torch.Tensor(exp/np.sum(exp)).float()
+        # Compute weighted sum of actions
+        weighted_sum = (weights[:,None,None]*random_actions.cpu())
+        weighted_sum = torch.sum(weighted_sum, dim=0)
+        # Compute mean and std of the best trajectories
+        action_mean = weighted_sum
+        action_std = torch.ones(weighted_sum.shape)*torch.Tensor(gaussian_noise_scales)[:,None]
+        # Sample new actions
+        normal_dist = tdist.Normal(action_mean, action_std)
+        random_actions = normal_dist.sample((n_samples_mpc,))
+        random_actions = random_actions.to(device)
+        # Perform rollout with new actions using the model
+        if not isinstance(model, list):
+            all_states, all_rewards = rollout_model(model, state_repeats, random_actions, horizon, reward_fn)
+        all_returns = all_rewards.sum(axis=-1)
 
     # TODO END
 
@@ -87,7 +104,6 @@ def plan_model_mppi(env, state, ac_size, horizon, model, reward_fn, n_samples_mp
     best_ac_idx = np.argmax(all_rewards.sum(axis=-1))
     best_ac = random_actions[best_ac_idx, 0] # Take the first action from the best trajectory
     return best_ac, random_actions[best_ac_idx]
-
 
 def rollout_model(
         model,
