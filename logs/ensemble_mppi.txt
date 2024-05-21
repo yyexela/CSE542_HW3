@@ -1,0 +1,124 @@
+using device cuda
+Initialize separate optimizers for ensemble mbrl
+Episode: 0, reward: -40.62078794631911, max path length: 50
+Episode: 1, reward: -14.777523700229342, max path length: 50
+Episode: 2, reward: -15.24490648401401, max path length: 50
+Episode: 3, reward: -13.898221146069186, max path length: 50
+Episode: 4, reward: -8.425499250294004, max path length: 50
+Episode: 5, reward: -12.34580887003254, max path length: 50
+Episode: 6, reward: -12.28821846062423, max path length: 50
+Episode: 7, reward: -11.57269078454608, max path length: 50
+Episode: 8, reward: -12.236290323071836, max path length: 50
+Episode: 9, reward: -10.484356073057485, max path length: 50
+Episode: 10, reward: -11.190789360991241, max path length: 50
+Episode: 11, reward: -9.891870525675078, max path length: 50
+Episode: 12, reward: -9.87478041788341, max path length: 50
+Episode: 13, reward: -9.750297722846899, max path length: 50
+Episode: 14, reward: -12.111428539000137, max path length: 50
+test 0, success False, reward -6.870493049604813
+test 1, success False, reward -12.614000748008982
+test 2, success True, reward -10.751223044879854
+test 3, success True, reward -8.628559028980929
+test 4, success False, reward -14.214879821603764
+test 5, success True, reward -10.480400901998888
+test 6, success False, reward -11.770956380981135
+test 7, success True, reward -10.232926570683892
+test 8, success True, reward -8.665295392320754
+test 9, success True, reward -5.697646435154542
+test 10, success False, reward -7.901192299738037
+test 11, success False, reward -13.08168477736848
+test 12, success False, reward -13.318877978646224
+test 13, success False, reward -14.898759986117332
+test 14, success True, reward -8.33849658850033
+test 15, success True, reward -11.191380743039518
+test 16, success False, reward -15.64069739228696
+test 17, success False, reward -16.89850957697082
+test 18, success False, reward -13.814061621414595
+test 19, success False, reward -12.192870099242457
+test 20, success False, reward -12.551398776358853
+test 21, success False, reward -9.20784469964825
+test 22, success True, reward -8.449637885919472
+test 23, success False, reward -12.561999720914368
+test 24, success True, reward -7.498335619653458
+test 25, success True, reward -9.390467244500115
+test 26, success False, reward -13.17035508477268
+test 27, success False, reward -14.953573495348037
+test 28, success False, reward -13.229125165887774
+test 29, success True, reward -9.815469668025392
+test 30, success False, reward -15.213864787339729
+test 31, success False, reward -10.803686203777055
+test 32, success False, reward -13.168549941814781
+test 33, success False, reward -13.054350643333173
+test 34, success False, reward -17.45635763904966
+test 35, success False, reward -13.671364160897177
+test 36, success True, reward -9.847396510335772
+test 37, success False, reward -10.360653185487765
+test 38, success True, reward -8.024770837098798
+test 39, success False, reward -16.42749209577924
+test 40, success False, reward -14.077260433685387
+test 41, success True, reward -8.738510575508329
+test 42, success True, reward -9.138310817740411
+test 43, success True, reward -5.715522697233646
+test 44, success True, reward -9.474386230925289
+test 45, success False, reward -9.737093563617535
+test 46, success True, reward -8.439738317856845
+test 47, success False, reward -12.702058604989343
+test 48, success True, reward -11.205457974739701
+test 49, success True, reward -7.056454981033346
+test 50, success False, reward -16.95534717640459
+test 51, success True, reward -10.04704003528661
+test 52, success False, reward -15.912241016448336
+test 53, success False, reward -14.258231382675286
+test 54, success False, reward -8.906002489233366
+test 55, success True, reward -8.59416829231273
+test 56, success False, reward -15.491815559914714
+test 57, success True, reward -5.452719909414139
+test 58, success False, reward -11.350204165713286
+test 59, success False, reward -11.13253254218235
+test 60, success False, reward -11.184925641165982
+test 61, success False, reward -11.909431824518908
+test 62, success True, reward -13.564828926886689
+test 63, success False, reward -13.304963323749977
+test 64, success True, reward -8.852795237360539
+test 65, success False, reward -14.291120400086003
+test 66, success False, reward -8.8480519164262
+test 67, success False, reward -11.924298513030076
+test 68, success True, reward -9.860035698452986
+test 69, success False, reward -16.160669791700954
+test 70, success True, reward -6.995658515413584
+test 71, success False, reward -14.585187887822213
+test 72, success True, reward -11.801472984798407
+test 73, success False, reward -13.468035870729977
+test 74, success True, reward -5.549905190786938
+test 75, success True, reward -10.352873699034339
+test 76, success False, reward -12.183944940971704
+test 77, success False, reward -17.405552173167333
+test 78, success False, reward -10.989954449976842
+test 79, success False, reward -15.134715800923132
+test 80, success False, reward -12.511624367509192
+test 81, success True, reward -13.25090149488241
+test 82, success False, reward -11.607489632282938
+test 83, success False, reward -12.112806887164105
+test 84, success True, reward -14.825162875716337
+test 85, success True, reward -8.128950495154953
+test 86, success False, reward -13.221507599673796
+test 87, success True, reward -13.409477288148787
+test 88, success False, reward -11.73999319470881
+test 89, success False, reward -9.876763547810274
+test 90, success True, reward -5.704104626838627
+test 91, success False, reward -9.924308753498792
+test 92, success True, reward -6.785095868850569
+test 93, success False, reward -11.04726970882315
+test 94, success True, reward -8.865068531816354
+test 95, success True, reward -6.654154102664828
+test 96, success True, reward -11.197536107699454
+test 97, success False, reward -12.362182939322444
+test 98, success False, reward -13.579861856373578
+test 99, success True, reward -14.15738177265244
+Success rate:  0.41
+Average reward (success only):  -9.288529749275632
+Average reward (all):  -11.397747670089936
+
+real    29m17.122s
+user    29m13.297s
+sys     0m2.667s

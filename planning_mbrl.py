@@ -241,7 +241,7 @@ def collect_traj_MBRL(
 
 # Training loop for policy gradient
 def simulate_mbrl(env, model, plan_mode, num_epochs=200, max_path_length=200, mpc_horizon=10, n_samples_mpc=200, 
-                  batch_size=100, num_agent_train_epochs_per_iter=1000, capacity=100000, num_traj_per_iter=100, gamma=0.99, print_freq=10, device = "cuda", reward_fn=None):
+                  batch_size=100, num_agent_train_epochs_per_iter=1000, capacity=100000, num_traj_per_iter=100, gamma=0.99, print_freq=10, device = "cuda", reward_fn=None, args=None):
 
     # Set up optimizer and replay buffer
     if not isinstance(model, list):
@@ -262,6 +262,10 @@ def simulate_mbrl(env, model, plan_mode, num_epochs=200, max_path_length=200, mp
                                  action_size = env.action_space.shape[0], 
                                  capacity=capacity, 
                                  device=device)
+
+    # Collect rewards for plotting
+    rewards_plot = list()
+
 
     # Iterate through data collection and planning loop
     for iter_num in range(num_epochs):
@@ -300,7 +304,16 @@ def simulate_mbrl(env, model, plan_mode, num_epochs=200, max_path_length=200, mp
 
         # Logging returns occasionally
         if iter_num % print_freq == 0:
-
             rewards_np = np.mean(np.asarray([traj['rewards'].sum() for traj in sample_trajs]))
             path_length = np.max(np.asarray([traj['rewards'].shape[0] for traj in sample_trajs]))
             print("Episode: {}, reward: {}, max path length: {}".format(iter_num, rewards_np, path_length))
+
+            rewards_plot.append(rewards_np)
+
+
+    plt.plot(rewards_plot)
+    plt.title(f"Rewards per epoch for {args.model_type} {args.plan_mode}")
+    plt.xlabel("Epoch")
+    plt.ylabel("Reward")
+    plt.savefig(os.path.join('figs',f'{args.model_type}_{args.plan_mode}.pdf'))
+    plt.close()

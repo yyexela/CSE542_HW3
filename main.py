@@ -76,7 +76,7 @@ if __name__ == '__main__':
     if not args.test:
         # Training and model saving code
         simulate_mbrl(env, model, plan_mode=args.plan_mode, num_epochs=num_epochs, max_path_length=max_path_length, mpc_horizon=mpc_horizon,
-                    n_samples_mpc=n_samples_mpc, batch_size=batch_size, num_agent_train_epochs_per_iter=num_agent_train_epochs_per_iter, capacity=capacity, num_traj_per_iter=num_traj_per_iter, gamma=gamma, print_freq=print_freq, device = "cuda", reward_fn=reward_fn)
+                    n_samples_mpc=n_samples_mpc, batch_size=batch_size, num_agent_train_epochs_per_iter=num_agent_train_epochs_per_iter, capacity=capacity, num_traj_per_iter=num_traj_per_iter, gamma=gamma, print_freq=print_freq, device = "cuda", reward_fn=reward_fn, args=args)
         if type(model) is list:
             for model_idx, curr_model in enumerate(model):
                 torch.save(curr_model.state_dict(), f'{args.model_type}_{args.plan_mode}_{model_idx}.pth')
